@@ -143,7 +143,7 @@
 - hosts: master
   vars:
     ansible_python_interpreter: /usr/bin/python3
-  remote_user: ubuntu
+  remote_user: ec2-user
   connection: ssh
   become: yes
   gather_facts: no
@@ -158,11 +158,25 @@
     - apt:
         name: python
         state: present
+    - name: create ssh keys
+      shell: > 
+      ssh-keygen -q -b 2048 -t rsa -N "" -C "creating SSH" -f ~/.ssh/id_rsa
+      creates="~/.ssh/id_rsa"
+
+    - name: test public key
+      shell: ssh-keygen -l -f ~/.ssh/id_rsa.pub
+      changed_when: false
+
+    - name: retrieve public key
+      shell: cat ~/.ssh/id_rsa.pub
+      register: master_public_key
+      changed_when: false
+
 
 - hosts: workernodes
   vars:
     ansible_python_interpreter: /usr/bin/python3
-  remote_user: ubuntu
+  remote_user: ec2-user
   connection: ssh
   become: yes
   gather_facts: no
@@ -177,6 +191,7 @@
     - apt:
         name: python
         state: present
+      
   
 
 
