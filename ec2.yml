@@ -173,7 +173,7 @@
       changed_when: false
 
 
-- hosts: workernodes
+- hosts: kubenodes
   vars:
     ansible_python_interpreter: /usr/bin/python3
   remote_user: ec2-user
@@ -191,6 +191,10 @@
     - apt:
         name: python
         state: present
+    - name: copy master node ssh keys
+      authorized_key:
+        user: ec2-user
+        key: "{{ ec2_master['instances']['public_ip'].master_public_key.stdout  }}"
       
   
 
