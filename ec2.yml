@@ -1,0 +1,185 @@
+- hosts: localhost
+  vars_files:
+    - "key.yml"
+  vars_prompt:
+    - name: nodes
+      prompt: "How many  nodes"
+      private: no
+    
+  tasks:
+    - name: Create a security group
+      ec2_group:
+        aws_access_key: "{{ access_key }}"
+        aws_secret_key: "{{ secret_key }}"
+        name: "{{ security_group }}"
+        region: "{{ region }}"
+        state: present
+        description: Create new Security Group
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 8080
+            to_port: 8080
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 6627
+            to_port: 6627
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 2181
+            to_port: 2181
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 6700
+            to_port: 6700
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 6627
+            to_port: 6627
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: icmp
+            from_port: 8 
+            to_port:  -1
+            cidr_ip: 0.0.0.0/0
+          - proto: icmp
+            from_port: 22
+            to_port:  22
+            cidr_ip: 0.0.0.0/0
+          - proto: icmp
+            from_port: 80
+            to_port:  80
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            cidr_ip: 0.0.0.0/0
+      register: basic_firewall
+      
+    - name: Launch AWS master node
+      ec2:
+        key_name: "{{ key_name }}"
+        aws_access_key: "{{ access_key }}"
+        aws_secret_key: "{{ secret_key }}"
+        instance_type: t2.micro
+        image: "{{ ami }}"
+        wait: yes
+        group: "{{ security_group }}"
+        count: 1
+        region: "{{ region }}"
+        vpc_subnet_id: "{{ subnet }}"
+        assign_public_ip: yes
+      register: ec2_master
+    
+    - name: Launch AWS kubernetes nodes
+      ec2:
+        key_name: "{{ key_name }}"
+        aws_access_key: "{{ access_key }}"
+        aws_secret_key: "{{ secret_key }}"
+        instance_type: t2.micro
+        image: "{{ ami }}"
+        wait: yes
+        group: "{{ security_group }}"
+        count: "{{ worker }}"
+        region: "{{ region }}"
+        vpc_subnet_id: "{{ subnet }}"
+        assign_public_ip: yes
+      register: ec2
+    
+    - name: create hosts file 
+      lineinfile:
+        path: hostnew
+        regexp: " master.foo.com  master"
+        line: "{{ item['private_ip'] }} master.foo.com  master"
+      with_items: 
+        - "{{ ec2_master.instances }}"
+
+    - name: create hosts file 
+      lineinfile:
+        path: hostnew
+        regexp: " ap-south-1.compute.amazonaws.com"
+        line: "{{ item['private_ip'] }} {{ item['private_dns_name'] }}  {{ item['private_dns_name'] }}"
+      with_items: 
+      - "{{ ec2.instances }}"
+        
+
+    - name: Create ssh group to login dynamically to EC2 Instance nimbus nodes
+      add_host: 
+        hostname: "{{ item.public_ip }}"
+        groupname: master
+      with_items:
+        - "{{ ec2_master.instances }}"
+        
+
+    - name: Create ssh group to login dynamically to EC2 Instance worker nodes
+      add_host: 
+        hostname: "{{ item.public_ip }}"
+        groupname: kubenodes
+      with_items:
+      - "{{ ec2.instances }}"
+      
+    
+    
+  
+
+    - name: Wait for ssh to come up
+      wait_for: 
+        host: "{{ item.public_ip }}" 
+        port: 22 
+        state: started
+      with_items: 
+        - "{{ ec2.instances }}"
+        - "{{ ec2_master.instances }}"
+
+- hosts: master
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  remote_user: ubuntu
+  connection: ssh
+  become: yes
+  gather_facts: no
+  
+  tasks:
+    
+    - copy:
+        src: hostnew
+        dest: /etc/hosts 
+    - apt:
+          update_cache: yes
+    - apt:
+        name: python
+        state: present
+
+- hosts: workernodes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  remote_user: ubuntu
+  connection: ssh
+  become: yes
+  gather_facts: no
+
+  tasks:   
+    - copy:
+        src: hostnew
+        dest: /etc/hosts 
+    
+    - apt:
+        update_cache: yes
+    - apt:
+        name: python
+        state: present
+  
+
+
+
+
+        
