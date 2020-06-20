@@ -162,15 +162,19 @@
       shell: > 
       ssh-keygen -q -b 2048 -t rsa -N "" -C "creating SSH" -f ~/.ssh/id_rsa
       creates="~/.ssh/id_rsa"
+      remote: yes 
 
     - name: test public key
       shell: ssh-keygen -l -f ~/.ssh/id_rsa.pub
       changed_when: false
+      remote: yes 
+
 
     - name: retrieve public key
       shell: cat ~/.ssh/id_rsa.pub
       register: master_public_key
       changed_when: false
+      remote: yes 
 
 
 - hosts: kubenodes
@@ -185,7 +189,6 @@
     - copy:
         src: hostnew
         dest: /etc/hosts 
-    
     - apt:
         update_cache: yes
     - apt:
@@ -195,6 +198,7 @@
       authorized_key:
         user: ec2-user
         key: "{{ ec2_master['instances']['public_ip'].master_public_key.stdout  }}"
+        
       
   
 
