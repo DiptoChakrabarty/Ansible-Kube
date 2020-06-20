@@ -22,7 +22,7 @@
 
 
 - name: install docker
-  apt:
+  package:
    name: docker-ce
    state: present
 - name: start and enable docker services

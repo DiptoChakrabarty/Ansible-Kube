@@ -10,14 +10,13 @@
 - name: Disable swap
   command: swapoff -a
   when: ansible_swaptotal_mb > 0
-- name: add apt keys
-  apt_key:
-    url: 'https://packages.cloud.google.com/apt/doc/apt-key.gpg'
-    state: present
-- name: add apt repo
-  apt_repository:
-    repo: 'deb http://apt.kubernetes.io/ kubernetes-xenial main'
-    state: present
+
+- name: Add Kubernetes Repo
+  copy:
+    src: kube.repo
+    dest: /etc/yum.repos.d/kubernetes.repo
+    
+
 - name: Install Kubernetes binaries
   apt: 
     name: "{{ packages }}"
