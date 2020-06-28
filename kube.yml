@@ -116,7 +116,7 @@
       - "{{ ec2.instances }}"
         
 
-    - name: Create ssh group to login dynamically to EC2 Instance nimbus nodes
+    - name: Create ssh group to login dynamically to EC2 Instance master nodes
       add_host: 
         hostname: "{{ item.public_ip }}"
         groupname: master
@@ -144,7 +144,7 @@
         - "{{ ec2.instances }}"
         - "{{ ec2_master.instances }}"
 
-- hosts: all
+- hosts: master,kubenodes
   vars:
     ansible_python_interpreter: /usr/bin/python3
   remote_user: ec2-user
@@ -153,10 +153,6 @@
   gather_facts: no
   
   tasks:
-    
-    - copy:
-        src: hostnew
-        dest: /etc/hosts 
     - include_role:
         name: "docker"
     - include_role:

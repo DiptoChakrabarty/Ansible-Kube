@@ -18,9 +18,10 @@
     
 
 - name: Install Kubernetes binaries
-  apt: 
+  yum: 
     name: "{{ packages }}"
     state: present
+    use_backend: yum
     update_cache: yes
   vars:
     packages:
