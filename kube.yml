@@ -70,7 +70,7 @@
         key_name: "{{ key_name }}"
         aws_access_key: "{{ access_key }}"
         aws_secret_key: "{{ secret_key }}"
-        instance_type: t2.micro
+        instance_type: t2.medium
         image: "{{ ami }}"
         wait: yes
         group: "{{ security_group }}"
@@ -85,7 +85,7 @@
         key_name: "{{ key_name }}"
         aws_access_key: "{{ access_key }}"
         aws_secret_key: "{{ secret_key }}"
-        instance_type: t2.micro
+        instance_type: t2.medium
         image: "{{ ami }}"
         wait: yes
         group: "{{ security_group }}"
@@ -99,7 +99,7 @@
       lineinfile:
         path: hostnew
         regexp: " master.foo.com  master"
-        line: "{{ item['private_ip'] }} master.foo.com  master"
+        line: "{{ item['public_ip'] }} master.foo.com  master"
       with_items: 
         - "{{ ec2_master.instances }}"
 
@@ -107,7 +107,7 @@
       lineinfile:
         path: hostnew
         regexp: " ap-south-1.compute.amazonaws.com"
-        line: "{{ item['private_ip'] }} {{ item['private_dns_name'] }}  {{ item['private_dns_name'] }}"
+        line: "{{ item['public_ip'] }} {{ item['private_dns_name'] }}  {{ item['private_dns_name'] }}"
       with_items: 
       - "{{ ec2.instances }}"
         
@@ -140,7 +140,7 @@
         - "{{ ec2.instances }}"
         - "{{ ec2_master.instances }}"
 
-- hosts: master
+- hosts: all
   vars:
     ansible_python_interpreter: /usr/bin/python3
   remote_user: ec2-user
@@ -153,51 +153,13 @@
     - copy:
         src: hostnew
         dest: /etc/hosts 
-    - apt:
-          update_cache: yes
-    - apt:
-        name: python
-        state: present
-    - name: create ssh keys
-      shell: > 
-      ssh-keygen -q -b 2048 -t rsa -N "" -C "creating SSH" -f ~/.ssh/id_rsa
-      creates="~/.ssh/id_rsa"
-      remote: yes 
-
-    - name: test public key
-      shell: ssh-keygen -l -f ~/.ssh/id_rsa.pub
-      changed_when: false
-      remote: yes 
+    - include_role:
+        name: "docker"
+    - include_role:
+        name: "kubernetes"
 
 
-    - name: retrieve public key
-      shell: cat ~/.ssh/id_rsa.pub
-      register: master_public_key
-      changed_when: false
-      remote: yes 
 
-
-- hosts: kubenodes
-  vars:
-    ansible_python_interpreter: /usr/bin/python3
-  remote_user: ec2-user
-  connection: ssh
-  become: yes
-  gather_facts: no
-
-  tasks:   
-    - copy:
-        src: hostnew
-        dest: /etc/hosts 
-    - apt:
-        update_cache: yes
-    - apt:
-        name: python
-        state: present
-    - name: copy master node ssh keys
-      authorized_key:
-        user: ec2-user
-        key: "{{ ec2_master['instances']['public_ip'].master_public_key.stdout  }}"
         
       
   
