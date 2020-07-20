@@ -1,0 +1,1 @@
+sudo yum install python2 -y  
