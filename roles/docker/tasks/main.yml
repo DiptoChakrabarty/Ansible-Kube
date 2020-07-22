@@ -3,10 +3,10 @@
 
     
 - name: install packages needed
-  yum:
+  package:
     name: "{{ item }}"
     state: present 
-    use_backend: yum
+    use: yum
   with_items:
     - lvm2
     - device-mapper
@@ -23,10 +23,10 @@
 
 
 - name: install docker
-  yum:
+  package:
    name: docker-ce
    state: present
-   use_backend: yum
+   use: yum
 - name: start and enable docker services
   service:
     name: "docker"

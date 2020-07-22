@@ -149,6 +149,7 @@
         - "{{ ec2_master.instances }}"
 
 
+
 - hosts: master,kubenodes
   remote_user: ec2-user
   connection: ssh
@@ -163,7 +164,7 @@
 
 - hosts: master,kubenodes
   vars:
-    ansible_python_interpreter: /usr/bin/python2
+    ansible_python_interpreter: /usr/bin/python2.7
   remote_user: ec2-user
   connection: ssh
   become: yes
