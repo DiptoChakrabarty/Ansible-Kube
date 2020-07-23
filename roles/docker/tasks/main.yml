@@ -23,9 +23,12 @@
 
 - name: install docker
   dnf:
-   name: docker-ce
+   name: "{{ item }}"
    state: present
-
+  with_items:
+    - https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
+    - docker-ce
+    
 - name: start and enable docker services
   service:
     name: "docker"

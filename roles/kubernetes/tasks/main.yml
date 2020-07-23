@@ -18,10 +18,9 @@
     
 
 - name: Install Kubernetes binaries
-  yum: 
+  dnf: 
     name: "{{ packages }}"
     state: present
-    use_backend: yum
     update_cache: yes
   vars:
     packages:
