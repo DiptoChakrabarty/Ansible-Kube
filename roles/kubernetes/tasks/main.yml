@@ -7,9 +7,12 @@
     - swap
     - none
 
-- name: Disable swap
-  command: swapoff -a
-  when: ansible_swaptotal_mb > 0
+- block:
+    - name: Disable swap
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+  rescue:
+  - shell: echo "No swap"
 
 - name: Add Kubernetes Repo
   copy:
